@@ -9,10 +9,10 @@ enum { BUF_SIZE = 1024 };
 char BUF[BUF_SIZE];
 
 
-size_t Read() {
-    const ssize_t nBytesRead = read(STDIN_FILENO, BUF, BUF_SIZE);
+size_t Read(int fd) {
+    const ssize_t nBytesRead = read(fd, BUF, BUF_SIZE);
     if (nBytesRead == -1) {
-        perror("An error occured in \"read\" system call");
+        perror("An error occurred in \"read\" system call");
         exit(EXIT_FAILURE);
     }
     return nBytesRead;
@@ -22,9 +22,13 @@ size_t Read() {
 void Write(int fd, size_t nBytesToWrite) {
     size_t totalNBytesWritten = 0;
     while (totalNBytesWritten != nBytesToWrite) {
-        ssize_t nBytesWritten = write(fd, BUF, nBytesToWrite - totalNBytesWritten);
+        ssize_t nBytesWritten = write(
+            fd,
+            BUF + totalNBytesWritten,
+            nBytesToWrite - totalNBytesWritten
+        );
         if (nBytesWritten == -1) {
-            perror("An error occured in \"write\" system call");
+            perror("An error occurred in \"write\" system call");
             exit(EXIT_FAILURE);
         }
         totalNBytesWritten += nBytesWritten;
@@ -33,8 +37,11 @@ void Write(int fd, size_t nBytesToWrite) {
 
 
 int main(int argc, char* const argv[]) {
-    const char* usage = "Usage: %s [-a] [FILE...]\n";
-    if (argc == 2 && strcmp(argv[1], "-h") == 0) {
+    const char* usage = "Usage: %s [-a] [FILE]...\n";
+    if (argc >= 2 && (
+        strcmp(argv[1], "-h") == 0
+     || strcmp(argv[1], "--help") == 0
+    )) {
         printf(usage, argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -54,7 +61,7 @@ int main(int argc, char* const argv[]) {
     int outputFileFds[nOutputFiles + 1]; outputFileFds[0] = STDOUT_FILENO;
     for (int i = 0; i != nOutputFiles; ++i) {
         const char* curFileName = argv[optind + i];
-        int fd = open(curFileName, openFlags, 0664);
+        const int fd = open(curFileName, openFlags, 0664);
         if (fd == -1) {
             perror("An error occurred in \"open\" system call");
             printf("when trying to open the file \"%s\"\n", curFileName);
@@ -65,7 +72,7 @@ int main(int argc, char* const argv[]) {
     }
 
     size_t nBytesRead;
-    while ((nBytesRead = Read()) != 0) {
+    while ((nBytesRead = Read(STDIN_FILENO)) != 0) {
         for (int i = 0; i != nOutputFiles + 1; ++i) {
             Write(outputFileFds[i], nBytesRead);
         }
