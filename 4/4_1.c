@@ -53,9 +53,11 @@ int main(int argc, char* const argv[]) {
     const int nOutputFiles = argc - optind;
     int outputFileFds[nOutputFiles + 1]; outputFileFds[0] = STDOUT_FILENO;
     for (int i = 0; i != nOutputFiles; ++i) {
-        int fd = open(argv[optind + i], openFlags, 0664);
+        const char* curFileName = argv[optind + i];
+        int fd = open(curFileName, openFlags, 0664);
         if (fd == -1) {
             perror("An error occurred in \"open\" system call");
+            printf("when trying to open the file \"%s\"\n", curFileName);
             exit(EXIT_FAILURE);
         } else {
             outputFileFds[i + 1] = fd;
