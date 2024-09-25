@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
     }
     const int lseekBeforeEachWrite = argc == 4;
 
-    const char* fileName = argv[1]; 
+    const char* const fileName = argv[1];
     const int oFlags = O_WRONLY | O_CREAT | (lseekBeforeEachWrite ? 0 : O_APPEND); 
     const int fd = open(fileName, oFlags, 0666);
     if (fd == -1) {
