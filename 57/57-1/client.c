@@ -1,8 +1,9 @@
 #include "common.h"
-#include <time.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <time.h>
 
 
 int main() {
@@ -24,7 +25,6 @@ int main() {
     );
 
     // Send datagramns to the server in an infinite loop
-
     char datagram[DATAGRAM_MAX_SIZE + 1] = {};
     int datagramNumber = 0;
     for (char letter = 'a';; letter = (letter == 'z' ? 'a' : letter + 1), ++datagramNumber) {

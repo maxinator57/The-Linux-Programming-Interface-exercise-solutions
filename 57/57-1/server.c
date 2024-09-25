@@ -41,22 +41,25 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Receive datagramns in a loop and sleep for 2 seconds after
+    // Receive datagramns in a loop and sleep for 1 second after
     // receiving each datagram and printing its contents to stdout
     char datagram[DATAGRAM_MAX_SIZE + 1] = {};
     enum {N_DATAGRAMS_TO_RECEIVE = 300};
     for (int i = 0; i != N_DATAGRAMS_TO_RECEIVE; ++i) {
+        // Receive the next datagram
         const int numBytesRead = recv(sfd, datagram, DATAGRAM_MAX_SIZE, 0);
         if (numBytesRead == -1) {
             perror("An error occured in \"recvfrom\" system call");
             exit(EXIT_FAILURE);
         }
+        // Print the datagram to stdout
         datagram[numBytesRead] = 0;
         printf(
             "Received datagram number %d (\"%s\") from the client, sleeping for 1 second...\n",
             i,
             datagram
         );
+        // Sleep for 1 second
         sleep(1);
     }
 }
