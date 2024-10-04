@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 
 int main() {
@@ -44,7 +43,8 @@ int main() {
     // Receive datagramns in a loop and sleep for 1 second after
     // receiving each datagram and printing its contents to stdout
     char datagram[DATAGRAM_MAX_SIZE + 1] = {};
-    enum {N_DATAGRAMS_TO_RECEIVE = 300};
+    const int N_DATAGRAMS_TO_RECEIVE = 300;
+    const useconds_t N_MICROSECONDS_TO_SLEEP = 10000; // 0.01 seconds
     for (int i = 0; i != N_DATAGRAMS_TO_RECEIVE; ++i) {
         // Receive the next datagram
         const int numBytesRead = recv(sfd, datagram, DATAGRAM_MAX_SIZE, 0);
@@ -55,11 +55,14 @@ int main() {
         // Print the datagram to stdout
         datagram[numBytesRead] = 0;
         printf(
-            "Received datagram number %d (\"%s\") from the client, sleeping for 1 second...\n",
+            "Received datagram number %d (\"%s\") from the client, sleeping for 0.01 seconds...\n",
             i,
             datagram
         );
-        // Sleep for 1 second
-        sleep(1);
+        // Sleep for 0.01 seconds
+        usleep(N_MICROSECONDS_TO_SLEEP);
     }
+
+    // Close the server file descriptor
+    close(sfd);
 }

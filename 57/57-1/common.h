@@ -1,7 +1,9 @@
 #pragma once
 
-#include <sys/un.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 
 
 enum {DATAGRAM_MAX_SIZE = 16};

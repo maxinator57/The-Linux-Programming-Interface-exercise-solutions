@@ -2,7 +2,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <sys/time.h>
+
+
+enum { N_MICROSECONDS_IN_SECOND = 1000000 };
+
+struct timeval GetCurrentTime() {
+    struct timeval currentTime = {};
+    gettimeofday(&currentTime, NULL);
+    return currentTime;
+}
 
 
 int main() {
@@ -23,7 +32,7 @@ int main() {
         sizeof(serverAddr.sun_path) - 1
     );
 
-    // Send datagramns to the server in an infinite loop
+    // Send datagrams to the server in an infinite loop
     char datagram[DATAGRAM_MAX_SIZE + 1] = {};
     int datagramNumber = 0;
     for (char letter = 'a';; letter = (letter == 'z' ? 'a' : letter + 1), ++datagramNumber) {
@@ -32,7 +41,8 @@ int main() {
             datagram[i] = letter;
         }
         // Mark the current time before sending the datagram
-        const time_t timeBeforeSending = time(NULL);
+        const struct timeval timeBeforeSending = GetCurrentTime();
+
         // Send the datagram
         const int numBytesSent = sendto(
             cfd,
@@ -46,21 +56,30 @@ int main() {
         if (numBytesSent != DATAGRAM_MAX_SIZE) {
             perror("An error occurred in \"sendto\" system call");
             printf(
-                "when sending datagram number %d (\"%s\")",
+                "when sending datagram number %d (\"%s\")\n",
                 datagramNumber,
                 datagram
             );
             exit(EXIT_FAILURE);
         }
         // Mark the time after sending the datagram
-        const time_t timeAfterSending = time(NULL);
+        const struct timeval timeAfterSending = GetCurrentTime();
         // Print the time that was taken by sending the current datagram
+        const suseconds_t nMicrosecondsElapsed =
+            ((suseconds_t) timeAfterSending.tv_sec - timeBeforeSending.tv_sec) * N_MICROSECONDS_IN_SECOND
+            + timeAfterSending.tv_usec - timeBeforeSending.tv_usec;
+        const time_t nFullSecondsElapsed = (time_t) (nMicrosecondsElapsed / N_MICROSECONDS_IN_SECOND);
+        const suseconds_t nRemainingMicroseconds = nMicrosecondsElapsed % N_MICROSECONDS_IN_SECOND;
         printf(
             "Successfully sent datagram number %d (\"%s\") to the server, "
-            "which took %ld seconds.\n",
+            "which took %ld seconds and %ld microseconds.\n",
             datagramNumber,
             datagram,
-            timeAfterSending - timeBeforeSending
+            nFullSecondsElapsed,
+            nRemainingMicroseconds
         );
     }
+
+    // Close the client file descriptor
+    close(cfd);
 }
