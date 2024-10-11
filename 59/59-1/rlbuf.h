@@ -13,8 +13,8 @@ struct TReadlineBuf {
     // The size of the buffer
     size_t BufSize;
     // The actual size of the buffer:
-    // cab be less than `BufSize` if the last call
-    // to `ReadRobust()` returned less than `BufSize`
+    // can be less than `BufSize` if the last `read()`
+    // from the file returned less than `BufSize`
     size_t ActualBufSize;
     // The index of the first unread character;
     size_t FirstUnreadCharacterIdx;
