@@ -5,8 +5,6 @@
 
 #include "rlbuf.h"
 
-#include <stdio.h>
-
 
 static ssize_t ReadRobust(const int fd, void* buf, const size_t nBytesToRead) {
     for(;;) {
@@ -88,7 +86,6 @@ ssize_t ReadLineBuf(struct TReadlineBuf* rlbuf, char* dst, const size_t n) {
     // Standard argument validity check, basically
     // copy-pasted from listing 59-1 from the book
     if (n <= 0 || dst == NULL || !IsValid(rlbuf)) {
-        printf("IsValid: %d\n", IsValid(rlbuf));
         errno = EINVAL;
         return -1;
     }
