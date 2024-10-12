@@ -5,7 +5,8 @@
 
 #include "rlbuf.h"
 
-
+// Same as the plain `read()` system call,
+// but handles interrupts caused by signals
 static ssize_t ReadRobust(const int fd, void* buf, const size_t nBytesToRead) {
     for(;;) {
         const ssize_t nBytesRead = read(fd, buf, nBytesToRead);
@@ -15,7 +16,7 @@ static ssize_t ReadRobust(const int fd, void* buf, const size_t nBytesToRead) {
     }
 }
 
-int ReadLineBufInit(int fd, struct TReadlineBuf* rlbuf, const size_t rlbufSize) {
+int ReadlineBufInit(int fd, struct TReadlineBuf* rlbuf, const size_t rlbufSize) {
     if (rlbufSize == 0) {
         errno = EINVAL;
         return -1;
@@ -47,6 +48,11 @@ void ReadlineBufFree(struct TReadlineBuf* rlbuf) {
     // from `rlbuf->Fd`
 }
 
+// Reads a new chunk of bytes from the file (referred to by the `rlbuf->Fd`
+// field) into the buffer `rlbuf->Buf`.
+// If the `read()` returns 0, then the `rlbuf->FinishedReading` flag is set
+// to indicate that no more bytes can be read with either from `rlbuf->Buf`
+// or from the file.
 static int ReadlineBufUpdate(struct TReadlineBuf* rlbuf) {
     if (rlbuf->FinishedReading || rlbuf->FirstUnreadCharacterIdx != rlbuf->ActualBufSize) {
         errno = EINVAL;
@@ -68,6 +74,8 @@ static int ReadlineBufUpdate(struct TReadlineBuf* rlbuf) {
     }
 }
 
+// A helper function that checks whether the `rlbuf`
+// struct is in a valid state for reading from it
 static int IsValid(struct TReadlineBuf* rlbuf) {
     return rlbuf != NULL
         && rlbuf->Buf != NULL
@@ -76,36 +84,45 @@ static int IsValid(struct TReadlineBuf* rlbuf) {
         && rlbuf->FirstUnreadCharacterIdx <= rlbuf->ActualBufSize;
 }
 
+// A helper function that calculates the number of bytes
+// that are available for reading from `rlbuf->Buf` buffer,
+// i.e. without invoking any `read`s from the file
 static size_t GetNumBytesAvailableForReading(
     const struct TReadlineBuf* rlbuf
 ) {
     return rlbuf->ActualBufSize - rlbuf->FirstUnreadCharacterIdx;
 }
 
-ssize_t ReadLineBuf(struct TReadlineBuf* rlbuf, char* dst, const size_t n) {
+
+ssize_t Readline(struct TReadlineBuf* rlbuf, char* dst, const size_t n) {
     // Standard argument validity check, basically
     // copy-pasted from listing 59-1 from the book
     if (n <= 0 || dst == NULL || !IsValid(rlbuf)) {
         errno = EINVAL;
         return -1;
     }
+
     // If we have already finished reading from `rlbuf`,
     // just return `0`
     if (rlbuf->FinishedReading) {
         return 0;
     }
+
     // Loop invariant: if there are unread bytes in the file
-    // then there are at least some unread bytes in `rlbuf->Buf`
-    //
+    // then there are at least some unread bytes in `rlbuf->Buf`.
     // If there are currently no bytes available for reading in `rlbuf->Buf`,
-    // try to uphold the loop invariant by updating `rlbuf`
+    // try to uphold the loop invariant by updating `rlbuf`.
     if (
         GetNumBytesAvailableForReading(rlbuf) == 0 &&
         ReadlineBufUpdate(rlbuf) == -1 // some error occured when reading from `rlbuf`
     ) return -1;
-    // Start the loop; if we have reached this point,
-    // the loop invariant is guaranteed to be holding
+
+    // Keep two counters:
+    // `nBytesRead` -- for the total number of bytes in the current line
+    // `nBytesCopiedToDst` 
     size_t nBytesRead = 0, nBytesCopiedToDst = 0;
+    // Start the loop; if we have reached this point,
+    // the loop invariant is guaranteed to be holding. 
     for (
         size_t nBytesAvailableForReading = GetNumBytesAvailableForReading(rlbuf);
         nBytesAvailableForReading != 0;

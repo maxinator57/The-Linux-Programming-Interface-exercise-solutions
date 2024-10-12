@@ -29,7 +29,7 @@ struct TReadlineBuf {
 // On success, allocates `rlbufSize` bytes of memory on the heap and returns `0`
 // On error, performs no heap memory allocation and returns `-1`, setting `errno`
 // appropriately
-int ReadLineBufInit(const int fd, struct TReadlineBuf* rlbuf, const size_t rlbufSize);
+int ReadlineBufInit(const int fd, struct TReadlineBuf* rlbuf, const size_t rlbufSize);
 
 // Frees the memory on the heap and resets the appropriate fields of `rlbuf`
 // Always returns successfully
@@ -42,4 +42,4 @@ void ReadlineBufFree(struct TReadlineBuf* rlbuf);
 // character is also copied into `dst`
 // On success, returns the number of the bytes read into `dst`
 // On error, returns `-1` and sets `errno` appropriately
-ssize_t ReadLineBuf(struct TReadlineBuf* rlbuf, char* dst, const size_t n);
+ssize_t Readline(struct TReadlineBuf* rlbuf, char* dst, const size_t n);
