@@ -8,7 +8,7 @@
 #include <sys/un.h>
 
 
-struct sockaddr_un CreateUnixDomainDatagramSocket(const char* sockPath) {
+struct sockaddr_un CreateUnixDomainSocketAddr(const char* sockPath) {
     struct sockaddr_un socketAddr;
     memset(&socketAddr, 0, sizeof(socketAddr));
     socketAddr.sun_family = AF_UNIX;
@@ -25,7 +25,7 @@ struct sockaddr_un CreateUnixDomainDatagramSocket(const char* sockPath) {
 int main() {
     // Create the first UNIX domain datagram socket address struct.
     const struct sockaddr_un firstSocketAddr =
-        CreateUnixDomainDatagramSocket("first_socket");
+        CreateUnixDomainSocketAddr("first_socket");
     // Create the file descriptor for the first socket.
     const int firstSocketFd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (firstSocketFd == -1) {
@@ -44,7 +44,7 @@ int main() {
 
     // Create the second UNIX domain datagram socket address struct.
     const struct sockaddr_un secondSocketAddr =
-        CreateUnixDomainDatagramSocket("second_socket");
+        CreateUnixDomainSocketAddr("second_socket");
     // Create the file descriptor for the second socket.
     const int secondSocketFd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (secondSocketFd == -1) {
@@ -145,5 +145,40 @@ int main() {
             "Successfully sent 1 byte from the third "
             "socket to the second socket, as expected"
         );         
+    }
+
+    // Just curious, what will be the address of the thir socket.
+    char receivedDatagram;
+    // Create the socket address struct to
+    // receive the sender socket address
+    struct sockaddr_un senderSocketAddr;
+    // Zero out the whole struct just in case
+    memset(&senderSocketAddr, 0, sizeof(senderSocketAddr));
+    socklen_t senderSocketAddrSize = sizeof(senderSocketAddr);
+    if (recvfrom(
+        secondSocketFd,
+        &receivedDatagram,
+        1,
+        0,
+        (struct sockaddr*) &senderSocketAddr,
+        &senderSocketAddrSize
+    ) == -1) {
+        perror(
+            "recvfrom() syscall from the second "
+            "socket failed with the following error"
+        );
+        exit(EXIT_FAILURE);
+    } else {
+        puts("Sender socket address:");
+        printf(
+            "    Address struct size: %u\n"
+            "    Address family: %d\n"
+            "    Path len: %zu\n"
+            "    Path: \"%s\"\n",
+            senderSocketAddrSize,
+            senderSocketAddr.sun_family,
+            strlen(senderSocketAddr.sun_path),
+            senderSocketAddr.sun_path
+        );
     }
 }
