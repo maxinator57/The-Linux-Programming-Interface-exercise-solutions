@@ -78,8 +78,34 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Try to send a datagram from the third socket to the first socket.
+    // Define a datagram.
     const char datagram = 'x';
+
+    // Try to send the datagram from the second socket to the first socket
+    // (this is expected to work fine).
+    if (sendto(
+            secondSocketFd,
+            &datagram,
+            1,
+            0,
+            (const struct sockaddr*) &firstSocketAddr,
+            sizeof(firstSocketAddr)
+    ) == -1) {
+        perror(
+            "sendto() syscall from the second socket to the "
+            "first socket failed with the following error"
+        );
+        const char* errorCode = strerrorname_np(errno);
+        printf("Error code: %d (%s)\n", errno, errorCode);
+    } else {
+        puts(
+            "Successfully sent 1 byte from the second "
+            "socket to the first socket, as expected"
+        );
+    }
+
+    // Try to send the datagram from the third socket to the first socket
+    // (this is expected to fail).
     if (sendto(
             thirdSocketFd,
             &datagram,
@@ -89,10 +115,35 @@ int main() {
             sizeof(firstSocketAddr)
     ) == -1) {
         perror(
-            "sendto() syscall from third socket to the "
+            "sendto() syscall from the third socket to the "
             "first socket failed with the following error"
         );
         const char* errorCode = strerrorname_np(errno);
         printf("Error code: %d (%s)\n", errno, errorCode);
+    } else {
+        puts("This is unexpected");
+    }
+
+    // Just to make sure, try to send the datagram from the third socket
+    // to the second socket (this is expected to work).
+    if (sendto(
+        thirdSocketFd,
+        &datagram,
+        1,
+        0,
+        (const struct sockaddr*) &secondSocketAddr,
+        sizeof(secondSocketAddr)
+    ) == -1) {
+        perror(
+            "sendto() syscall from the third socket to the "
+            "second socket failed with the following error"
+        );
+        const char* errorCode = strerrorname_np(errno);
+        printf("Error code: %d (%s)\n", errno, errorCode);
+    } else {
+        puts(
+            "Successfully sent 1 byte from the third "
+            "socket to the second socket, as expected"
+        );         
     }
 }
